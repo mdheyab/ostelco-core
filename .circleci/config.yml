@@ -254,7 +254,7 @@ jobs:
             git add prime-prod-values.yaml
             git commit -m "[ci skip] updating prime image tag to the latest built image."
             git push https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/ostelco/ostelco-core.git circleci-dev
-            hub pull-request -m "merging develop into master" -b master
+            hub pull-request -m "merging develop into master" -b circleci-prod
       
       - run:
            name: notify slack on failure
