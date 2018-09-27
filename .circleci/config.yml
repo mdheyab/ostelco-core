@@ -55,7 +55,7 @@ jobs:
       - save_cache:
           paths:
             - ~/.gradle
-          key: gradle-v4-{{ .Branch }}-{{ checksum "gradle.build" }}
+          key: gradle-v4-{{ .Branch }}-{{ checksum "build.gradle" }}
 
       # persisting the entire project with its generated artifacts. They are needed in the build-image job below.
       # the default working directory in circleci is ~/project/
