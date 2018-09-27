@@ -20,16 +20,22 @@ jobs:
       # Show the java version installed.
       - run: java -version
 
-      - run:
-          name: Pulling Gradle cache
-          command: |
-            sudo rm -f /etc/boto.cfg # needed to fix gsutil issue in circleci https://github.com/travis-ci/travis-ci/issues/7940
-            export CLOUDSDK_CORE_PROJECT=${DEV_PROJECT}
-            echo $GOOGLE_GCR_CREDENTIALS > ${HOME}/gcloud-service-key.json
-            gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
-            gsutil cp gs://pi-ostelco-core-gradle-cache/caches.tar.gz ~/caches.tar.gz
-            mkdir -p ~/.gradle/caches/
-            tar -xzvf ~/caches.tar.gz -C ~/.gradle/caches/ .
+      - restore_cache:
+          keys:
+            # when lock file changes, use increasingly general patterns to restore cache
+            - gradle-v4-{{ .Branch }}-{{ checksum "build.gradle" }}
+            - gradle-v4-{{ .Branch }}-
+            - gradle-v4-
+      # - run:
+      #     name: Pulling Gradle cache
+      #     command: |
+      #       sudo rm -f /etc/boto.cfg # needed to fix gsutil issue in circleci https://github.com/travis-ci/travis-ci/issues/7940
+      #       export CLOUDSDK_CORE_PROJECT=${DEV_PROJECT}
+      #       echo $GOOGLE_GCR_CREDENTIALS > ${HOME}/gcloud-service-key.json
+      #       gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
+      #       gsutil cp gs://pi-ostelco-core-gradle-cache/caches.tar.gz ~/caches.tar.gz
+      #       mkdir -p ~/.gradle/caches/
+      #       tar -xzvf ~/caches.tar.gz -C ~/.gradle/caches/ .
       # Copying pantel prod secret to locations where it is needed for docker compose tests.
       - run:
           name: Distribute pantel-prod.json secret from env var.
@@ -39,13 +45,18 @@ jobs:
       - run:
           name: Build entire repo
           command: ./gradlew clean build -info -s -x :neo4j-store:test
-      - run:
-          name: Push Gradle cache
-          command: |
-            rm -f ~/.gradle/caches/modules-2/modules-2.lock
-            rm -fr ~/.gradle/caches/*/plugin-resolution/
-            tar -czvf  ~/caches.tar.gz  -C ~/.gradle/caches .
-            gsutil cp  ~/caches.tar.gz gs://pi-ostelco-core-gradle-cache
+      # - run:
+      #     name: Push Gradle cache
+      #     command: |
+      #       rm -f ~/.gradle/caches/modules-2/modules-2.lock
+      #       rm -fr ~/.gradle/caches/*/plugin-resolution/
+      #       tar -czvf  ~/caches.tar.gz  -C ~/.gradle/caches .
+      #       gsutil cp  ~/caches.tar.gz gs://pi-ostelco-core-gradle-cache
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: gradle-v4-{{ .Branch }}-{{ checksum "gradle.build" }}
+
       # persisting the entire project with its generated artifacts. They are needed in the build-image job below.
       # the default working directory in circleci is ~/project/
       - persist_to_workspace:
